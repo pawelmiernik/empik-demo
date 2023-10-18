@@ -52,7 +52,7 @@ components:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         login:
           type: string
         name:

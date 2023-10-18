@@ -1,8 +1,8 @@
 package com.example.epmikdemo.application
 
-
-import com.example.epmikdemo.domain.user.helper.UserAdepterHelper
+import com.example.epmikdemo.application.helper.UserResponseDTOHelper
 import com.example.epmikdemo.domain.user.helper.UserHelper
+import com.example.epmikdemo.domain.user.helper.UserRequestRepositoryHelper
 import com.example.epmikdemo.domain.user.port.UserRepositoryPort
 import com.example.epmikdemo.openapi.model.UserResponseDTO
 import org.spockframework.spring.SpringBean
@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.*
+import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import spock.lang.Specification
 
@@ -25,7 +26,7 @@ class UsersUseCaseTest extends Specification {
     int port
 
     @Autowired
-    UserAdepterHelper userAdepterHelper
+    UserRequestRepositoryHelper userRequestRepositoryHelper
 
     @Autowired
     RestTemplate restTemplate
@@ -34,17 +35,54 @@ class UsersUseCaseTest extends Specification {
     UserRepositoryPort userRepositoryPort = Mock()
 
     def cleanup() {
-        userAdepterHelper.cleanup()
+        userRequestRepositoryHelper.cleanup()
     }
 
-    def "should get agent"() {
+    def "should get user"() {
+        given:
+            def user = UserHelper.userEntity(login: LOGIN)
+        and:
+            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.ofNullable(user)
         when:
             ResponseEntity<UserResponseDTO> response = restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
         then:
-            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.ofNullable(UserHelper.userEntity(login: LOGIN))
             response.statusCode == HttpStatus.OK
-            response.getBody().login == LOGIN
-            response.getBody().calculations != null
+            UserResponseDTOHelper.compare(response.getBody(), user)
+            userRequestRepositoryHelper.findUser(LOGIN).requestCount == 1
+    }
+
+    def "should get user twice"() {
+        given:
+            def user = UserHelper.userEntity(login: LOGIN)
+        and:
+            2 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.ofNullable(user)
+            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+        expect:
+            userRequestRepositoryHelper.findUser(LOGIN).requestCount == 2
+    }
+
+    def "should return 404 when not found user"() {
+        given:
+            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.empty()
+        expect:
+            try {
+                restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+            } catch (HttpClientErrorException ex) {
+                ex.statusCode == HttpStatus.NOT_FOUND
+            }
+            userRequestRepositoryHelper.findUser(LOGIN).requestCount == 1
+
+    }
+
+    def "should throw exception when not found user"() {
+        given:
+            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.empty()
+        when:
+            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+        then:
+            thrown HttpClientErrorException
+            userRequestRepositoryHelper.findUser(LOGIN).requestCount == 1
     }
 
 

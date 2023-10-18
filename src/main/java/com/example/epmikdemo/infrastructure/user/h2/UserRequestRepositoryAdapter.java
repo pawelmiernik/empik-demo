@@ -23,7 +23,6 @@ class UserRequestRepositoryAdapter implements UserRequestRepositoryPort {
   @Override
   public void save(UserRequest userRequest) {
     repository.save(userRequest);
-
   }
 
   @Override
