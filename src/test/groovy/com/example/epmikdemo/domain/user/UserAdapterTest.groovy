@@ -1,6 +1,6 @@
 package com.example.epmikdemo.domain.user
 
-import com.example.epmikdemo.domain.user.helper.UserAdepterHelper
+import com.example.epmikdemo.domain.user.helper.UserRequestRepositoryHelper
 import com.example.epmikdemo.domain.user.port.UserPort
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,21 +15,19 @@ class UserAdapterTest extends Specification {
     UserPort userPort
 
     @Autowired
-    UserAdepterHelper userAdepterHelper
+    UserRequestRepositoryHelper userRequestRepositoryHelper
 
     def cleanup() {
-        userAdepterHelper.cleanup()
+        userRequestRepositoryHelper.cleanup()
     }
-
 
 
     def "should save user request"() {
         given:
             userPort.saveUserRequest(LOGIN)
-        when:
-            UserRequest actual = userAdepterHelper.findUser(LOGIN)
-        then:
-            actual.login.equals(LOGIN)
+        expect:
+            UserRequest actual = userRequestRepositoryHelper.findUser(LOGIN)
+            actual.login == LOGIN
             actual.requestCount == 1
     }
 
@@ -37,10 +35,9 @@ class UserAdapterTest extends Specification {
         given:
             userPort.saveUserRequest(LOGIN)
             userPort.saveUserRequest(LOGIN)
-        when:
-            UserRequest actual = userAdepterHelper.findUser(LOGIN)
-        then:
-            actual.login.equals(LOGIN)
+        expect:
+            UserRequest actual = userRequestRepositoryHelper.findUser(LOGIN)
+            actual.login == LOGIN
             actual.requestCount == 2
     }
 }

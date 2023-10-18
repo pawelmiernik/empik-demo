@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 @Transactional
-class UserAdepterHelper {
+class UserRequestRepositoryHelper {
 
     @Autowired
     UserRequestRepositoryPort userRequestRepositoryPort
@@ -20,23 +20,4 @@ class UserAdepterHelper {
     UserRequest findUser(String login) {
         userRequestRepositoryPort.findUserRequestByLogin(login).orElse(null)
     }
-
-
-
-//    private static Map defaultUserRequestEntityArgs(Map customArgs = [:]) {
-//        [
-//            login   : "ala"
-//        ]
-//    }
-//
-//    static UserRequest userRequestEntity(Map customArgs = [:]) {
-//        Map args = defaultMorfologikReqDTOEntityArgs(customArgs)
-//        args << customArgs
-//
-//        def entity = MorfologikReqDTO.builder()
-//            .content(args.content as String)
-//            .build()
-//
-//        entity
-//    }
 }
