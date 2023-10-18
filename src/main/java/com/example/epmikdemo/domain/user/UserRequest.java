@@ -21,6 +21,4 @@ public class UserRequest {
   private Long id;
   private String login;
   private Integer requestCount;
-
-  //standard constructors, getters, setters
 }

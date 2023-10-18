@@ -91,13 +91,11 @@
             <version>${spock.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
             <version>${jacoco-maven-plugin.version}</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -220,5 +218,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
