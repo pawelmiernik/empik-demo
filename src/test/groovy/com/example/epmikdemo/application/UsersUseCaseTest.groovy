@@ -41,11 +41,10 @@ class UsersUseCaseTest extends Specification {
     def "should get user"() {
         given:
             def user = UserHelper.userEntity(login: LOGIN)
-        and:
-            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.ofNullable(user)
         when:
             ResponseEntity<UserResponseDTO> response = restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
         then:
+            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.ofNullable(user)
             response.statusCode == HttpStatus.OK
             UserResponseDTOHelper.compare(response.getBody(), user)
             userRequestRepositoryHelper.findUser(LOGIN).requestCount == 1
@@ -54,34 +53,34 @@ class UsersUseCaseTest extends Specification {
     def "should get user twice"() {
         given:
             def user = UserHelper.userEntity(login: LOGIN)
-        and:
+        when:
+            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+        then:
             2 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.ofNullable(user)
-            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
-            restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
-        expect:
             userRequestRepositoryHelper.findUser(LOGIN).requestCount == 2
     }
 
     def "should return 404 when not found user"() {
-        given:
-            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.empty()
-        expect:
+        when:
             try {
                 restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
             } catch (HttpClientErrorException ex) {
                 ex.statusCode == HttpStatus.NOT_FOUND
             }
+        then:
+            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.empty()
             userRequestRepositoryHelper.findUser(LOGIN).requestCount == 1
 
     }
 
     def "should throw exception when not found user"() {
-        given:
-            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.empty()
         when:
             restTemplate.exchange(String.format(USERS_URL, port), HttpMethod.GET, new HttpEntity<Void>(null, new HttpHeaders()), UserResponseDTO.class, LOGIN)
+
         then:
-            thrown HttpClientErrorException
+            1 * userRepositoryPort.getUserByLogin(LOGIN) >> Optional.empty()
+            thrown(HttpClientErrorException)
             userRequestRepositoryHelper.findUser(LOGIN).requestCount == 1
     }
 
